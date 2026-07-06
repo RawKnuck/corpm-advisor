@@ -1,0 +1,193 @@
+@import url('https://cdn.jsdelivr.net/npm/@fontsource/latin-modern-roman@5.0.8/index.css');
+
+:root {
+  --bg-color: #fcfbfa;       /* cream paper background (#fcfbfa) */
+  --text-color: #1c1b18;     /* Deep charcoal text */
+  --border-color: #2b2a27;   /* Thin black/slate border */
+  --accent-color: #8b0000;   /* Deep crimson for errors/emphasis */
+  --input-bg: #ffffff;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  font-family: "Latin Modern Roman", "Latin Modern Roman 10 Regular", Georgia, "Times New Roman", serif;
+  font-size: 16px;
+  line-height: 1.6;
+  text-rendering: optimizeLegibility;
+}
+
+/* Page layouts */
+.centered-layout {
+  padding: 3rem 1.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+.sidebar-layout {
+  display: flex;
+  flex-direction: row;
+  min-height: 100vh;
+  width: 100%;
+}
+
+.sidebar-main-content {
+  flex-grow: 1;
+  padding: 3rem 1.5rem;
+  display: flex;
+  justify-content: center;
+  overflow-y: auto;
+  height: 100vh;
+}
+
+
+/* Main Academic Paper Wrapper */
+.paper-container {
+  width: 100%;
+  max-width: 720px;
+  display: flex;
+  flex-direction: column;
+  min-height: 85vh;
+  position: relative;
+}
+
+/* LaTeX Style Header */
+.academic-header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+
+.academic-title {
+  font-size: 2.2rem;
+  font-weight: normal;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.5rem;
+}
+
+.academic-subtitle {
+  font-size: 1.1rem;
+  font-style: italic;
+  margin-bottom: 1.5rem;
+  opacity: 0.9;
+}
+
+/* Double horizontal lines typical of LaTeX headers */
+.latex-divider {
+  border-top: 1.5px solid var(--border-color);
+  border-bottom: 0.5px solid var(--border-color);
+  height: 4px;
+  margin-bottom: 2rem;
+}
+
+/* Chat Log Area */
+.chat-log {
+  flex-grow: 1;
+  overflow-y: auto;
+  margin-bottom: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* LaTeX Message block */
+.message-block {
+  text-align: justify;
+  text-justify: inter-word;
+}
+
+.message-meta {
+  font-size: 0.85rem;
+  font-weight: bold;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 0.35rem;
+  border-bottom: 0.5px dashed var(--border-color);
+  padding-bottom: 2px;
+}
+
+.message-meta.user {
+  text-align: right;
+}
+
+.message-meta.advisor {
+  text-align: left;
+}
+
+.message-content {
+  font-size: 1.05rem;
+  white-space: pre-wrap;
+}
+
+/* Input Form */
+.input-form {
+  margin-top: auto;
+}
+
+.input-row {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.chat-input {
+  flex-grow: 1;
+  font-family: inherit;
+  font-size: 1.05rem;
+  background-color: var(--input-bg);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  border-radius: 0; /* Strict no rounded corners */
+  padding: 10px 14px;
+  outline: none;
+}
+
+.chat-input:focus {
+  border-width: 1.5px;
+}
+
+.submit-btn {
+  font-family: inherit;
+  font-size: 1.05rem;
+  background-color: var(--text-color);
+  color: var(--bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: 0;
+  padding: 10px 24px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.submit-btn:hover {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+}
+
+.submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Status Indicator */
+.status-indicator {
+  font-style: italic;
+  font-size: 0.95rem;
+  margin-top: 8px;
+  opacity: 0.8;
+}
+
+/* Error banner */
+.error-banner {
+  border: 1px solid var(--accent-color);
+  color: var(--accent-color);
+  padding: 10px;
+  margin-bottom: 1rem;
+  font-style: italic;
+}
