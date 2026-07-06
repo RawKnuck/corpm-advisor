@@ -25,6 +25,7 @@ export default function ChatPage({ params }: PageProps) {
   const router = useRouter();
 
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Authentication check and history fetch
   useEffect(() => {
@@ -71,6 +72,24 @@ export default function ChatPage({ params }: PageProps) {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
+
+  // Auto-resize textarea
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    textarea.style.height = 'auto';
+    textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
+  }, [input]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      const form = e.currentTarget.form;
+      if (form) {
+        form.requestSubmit();
+      }
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -155,15 +174,26 @@ export default function ChatPage({ params }: PageProps) {
 
               <form onSubmit={handleSubmit} className="input-form">
                 <div className="input-row">
-                  <input
-                    type="text"
+                  <textarea
+                    ref={textareaRef}
                     className="chat-input"
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
                     placeholder="Describe your situation (e.g., job interview, office politics)..."
                     disabled={loading}
                     required
                     autoFocus
+                    rows={1}
+                    style={{
+                      resize: 'none',
+                      overflowY: 'auto',
+                      minHeight: '44px',
+                      maxHeight: '200px',
+                      paddingTop: '10px',
+                      paddingBottom: '10px',
+                      lineHeight: '1.4',
+                    }}
                   />
                   <button type="submit" className="submit-btn" disabled={loading}>
                     Consult
