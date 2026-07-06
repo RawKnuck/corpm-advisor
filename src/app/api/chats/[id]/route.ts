@@ -33,3 +33,43 @@ export async function DELETE(
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
+
+// PATCH /api/chats/[id]: Rename a chat session
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = await getServerSession(authOptions);
+  const userId = (session?.user as { id?: string })?.id;
+  if (!userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  const { id } = await params;
+
+  try {
+    const { title } = await request.json();
+    if (!title || typeof title !== 'string' || !title.trim()) {
+      return NextResponse.json({ error: 'Title is required' }, { status: 400 });
+    }
+
+    // Verify chat ownership
+    const chatRes = await query('SELECT user_id FROM chats WHERE id = $1', [id]);
+    if (chatRes.rows.length === 0) {
+      return NextResponse.json({ error: 'Chat not found' }, { status: 404 });
+    }
+    if (chatRes.rows[0].user_id !== userId) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    // Update title
+    const updateRes = await query(
+      'UPDATE chats SET title = $1, updated_at = NOW() WHERE id = $2 RETURNING *',
+      [title.trim(), id]
+    );
+
+    return NextResponse.json({ chat: updateRes.rows[0] });
+  } catch (err) {
+    console.error('Failed to rename chat:', err);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
+}

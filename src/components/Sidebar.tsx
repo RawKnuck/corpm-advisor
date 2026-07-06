@@ -18,6 +18,8 @@ export default function Sidebar({ activeChatId }: SidebarProps) {
   const [chats, setChats] = useState<Chat[]>([]);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [editingChatId, setEditingChatId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState("");
   const router = useRouter();
 
   const fetchChats = async () => {
@@ -83,6 +85,35 @@ export default function Sidebar({ activeChatId }: SidebarProps) {
       }
     } catch (err) {
       console.error("Error deleting chat:", err);
+    }
+  };
+
+  const startRename = (id: string, title: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingChatId(id);
+    setEditTitle(title);
+  };
+
+  const handleRename = async (id: string) => {
+    if (!editTitle.trim()) {
+      setEditingChatId(null);
+      return;
+    }
+    try {
+      const res = await fetch(`/api/chats/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: editTitle.trim() }),
+      });
+      if (res.ok) {
+        setChats((prev) =>
+          prev.map((c) => (c.id === id ? { ...c, title: editTitle.trim() } : c))
+        );
+      }
+    } catch (err) {
+      console.error("Error renaming chat:", err);
+    } finally {
+      setEditingChatId(null);
     }
   };
 
@@ -207,10 +238,11 @@ export default function Sidebar({ activeChatId }: SidebarProps) {
         ) : (
           chats.map((chat) => {
             const isActive = chat.id === activeChatId;
+            const isEditing = chat.id === editingChatId;
             return (
               <div
                 key={chat.id}
-                onClick={() => router.push(`/chat/${chat.id}`)}
+                onClick={() => !isEditing && router.push(`/chat/${chat.id}`)}
                 style={{
                   display: "flex",
                   justifyContent: "space-between",
@@ -218,41 +250,86 @@ export default function Sidebar({ activeChatId }: SidebarProps) {
                   padding: "8px 10px",
                   border: isActive ? "1.5px solid var(--border-color)" : "1px solid transparent",
                   backgroundColor: isActive ? "rgba(0,0,0,0.03)" : "transparent",
-                  cursor: "pointer",
+                  cursor: isEditing ? "default" : "pointer",
                   fontSize: "0.95rem",
                   fontFamily: "inherit",
                 }}
                 onMouseEnter={(e) => {
-                  if (!isActive) e.currentTarget.style.backgroundColor = "rgba(0,0,0,0.02)";
+                  if (!isActive && !isEditing) e.currentTarget.style.backgroundColor = "rgba(0,0,0,0.02)";
                 }}
                 onMouseLeave={(e) => {
-                  if (!isActive) e.currentTarget.style.backgroundColor = "transparent";
+                  if (!isActive && !isEditing) e.currentTarget.style.backgroundColor = "transparent";
                 }}
               >
-                <span style={{
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                  marginRight: "8px",
-                  fontWeight: isActive ? "bold" : "normal",
-                  flexGrow: 1,
-                }}>
-                  {chat.title}
-                </span>
-                <button
-                  onClick={(e) => handleDeleteChat(chat.id, e)}
-                  title="Delete Session"
-                  style={{
-                    background: "none",
-                    border: "none",
-                    color: "var(--accent-color)",
-                    cursor: "pointer",
-                    fontSize: "0.85rem",
-                    padding: "2px 6px",
-                  }}
-                >
-                  ✕
-                </button>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    onBlur={() => handleRename(chat.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleRename(chat.id);
+                      if (e.key === "Escape") setEditingChatId(null);
+                    }}
+                    autoFocus
+                    style={{
+                      flexGrow: 1,
+                      fontFamily: "inherit",
+                      fontSize: "0.95rem",
+                      padding: "2px 4px",
+                      border: "1px solid var(--border-color)",
+                      outline: "none",
+                      backgroundColor: "transparent",
+                      color: "var(--text-color)",
+                    }}
+                  />
+                ) : (
+                  <>
+                    <span style={{
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      marginRight: "8px",
+                      fontWeight: isActive ? "bold" : "normal",
+                      flexGrow: 1,
+                    }}>
+                      {chat.title}
+                    </span>
+                    <div style={{ display: "flex", gap: "4px" }}>
+                      <button
+                        onClick={(e) => startRename(chat.id, chat.title, e)}
+                        title="Rename Session"
+                        style={{
+                          background: "none",
+                          border: "none",
+                          color: "var(--text-color)",
+                          cursor: "pointer",
+                          fontSize: "0.85rem",
+                          padding: "2px 6px",
+                          opacity: 0.6,
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.opacity = "1"}
+                        onMouseLeave={(e) => e.currentTarget.style.opacity = "0.6"}
+                      >
+                        ✎
+                      </button>
+                      <button
+                        onClick={(e) => handleDeleteChat(chat.id, e)}
+                        title="Delete Session"
+                        style={{
+                          background: "none",
+                          border: "none",
+                          color: "var(--accent-color)",
+                          cursor: "pointer",
+                          fontSize: "0.85rem",
+                          padding: "2px 6px",
+                        }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             );
           })
