@@ -191,3 +191,19 @@ body {
   margin-bottom: 1rem;
   font-style: italic;
 }
+
+/* Hide scrollbars visually while retaining scrolling functions */
+.sidebar-main-content,
+.chat-log,
+aside,
+aside div {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.sidebar-main-content::-webkit-scrollbar,
+.chat-log::-webkit-scrollbar,
+aside::-webkit-scrollbar,
+aside div::-webkit-scrollbar {
+  display: none;             /* Chrome, Safari, and Opera */
+}
