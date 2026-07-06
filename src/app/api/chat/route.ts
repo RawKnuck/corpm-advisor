@@ -130,27 +130,49 @@ export async function POST(request: Request) {
       parts: [{ text: m.content }]
     }));
     // change model name if u want to use other model other than gemini-3.5-flash
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents,
-          systemInstruction: {
-            parts: [{ text: dynamicSystemInstruction }]
-          },
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 8192
-          }
-        })
-      }
-    );
+    let response: Response | null = null;
+    let retries = 3;
+    let delay = 1000; // Start with 1 second delay
 
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error('Gemini API Error:', errText);
+    while (retries > 0) {
+      try {
+        response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents,
+              systemInstruction: {
+                parts: [{ text: dynamicSystemInstruction }]
+              },
+              generationConfig: {
+                temperature: 0.7,
+                maxOutputTokens: 8192
+              }
+            })
+          }
+        );
+
+        if (response.ok) {
+          break; // Success
+        }
+
+        console.warn(`Gemini API returned status ${response.status}. Retrying in ${delay}ms... (Retries left: ${retries - 1})`);
+      } catch (fetchErr) {
+        console.warn(`Fetch attempt failed: ${fetchErr}. Retrying in ${delay}ms... (Retries left: ${retries - 1})`);
+      }
+
+      retries--;
+      if (retries > 0) {
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        delay *= 2; // Exponential backoff
+      }
+    }
+
+    if (!response || !response.ok) {
+      const errText = response ? await response.text() : 'Network failure or timeout.';
+      console.error('Gemini API Error after retries:', errText);
       return NextResponse.json({ error: 'Gemini API call failed.' }, { status: 500 });
     }
 
