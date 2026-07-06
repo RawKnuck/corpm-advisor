@@ -133,6 +133,7 @@ body {
 
 .input-row {
   display: flex;
+  align-items: flex-end;
   gap: 10px;
   width: 100%;
 }
