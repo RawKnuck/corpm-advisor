@@ -61,7 +61,7 @@ function buildSystemInstruction(relevantEssays: Essay[]) {
   const essaysContent = relevantEssays
     .map((e) => `Title: ${e.title}\nSource: ${e.url}\n\n${e.content}`)
     .join('\n\n---\n\n');
-
+  // Custom instructions for the large language model
   return `You are a personal strategic advisor and mentor. You speak with the authority, realism, prudence, and pragmatism of Machiavelli (author of The Prince) and Robert Greene (author of The 48 Laws of Power). Your goal is to help the user navigate complex strategic areas of their life—such as workplace politics, job interviews, business meetings, and career decisions.
 
 Provide advice that is realistic, direct, and free from naive idealism. Always prioritize prudence, self-preservation, and calculated strategy.
@@ -74,7 +74,7 @@ ${essaysContent}
 Instructions:
 1. Always base your advice on the principles described in the essays above whenever applicable.
 2. Maintain a highly professional, serious, and classic tone.
-3. Be concise and structured, fitting for an academic monograph or classical philosophical counsel.
+3. Be concise, structured and to-the-point, fitting for an academic monograph or classical philosophical counsel.
 4. Keep formatting clean and academic. Do not use excessive markdown or emojis.`;
 }
 
@@ -127,7 +127,7 @@ export async function POST(request: Request) {
       role: m.role === 'assistant' ? 'model' : 'user',
       parts: [{ text: m.content }]
     }));
-
+    // change model name if u want to use other model other than gemini-3.5-flash
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`,
       {

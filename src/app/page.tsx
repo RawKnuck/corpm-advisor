@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSession } from 'next-auth/react';
 import Sidebar from '@/components/Sidebar';
+import { renderMarkdown } from '@/lib/markdown';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -106,7 +107,7 @@ export default function Home() {
                 <div className={`message-meta ${m.role === 'user' ? 'user' : 'advisor'}`}>
                   {m.role === 'user' ? 'Consultant (You)' : 'Advisor'}
                 </div>
-                <div className="message-content">{m.content}</div>
+                <div className="message-content">{renderMarkdown(m.content)}</div>
               </div>
             ))}
 
