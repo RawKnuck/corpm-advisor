@@ -107,13 +107,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Forbidden.' }, { status: 403 });
     }
 
-    // Save user's message
-    await query(
-      "INSERT INTO messages (chat_id, role, content, created_at) VALUES ($1, 'user', $2, NOW())",
-      [chatId, content]
-    );
-
-    // Retrieve full message history for this chat
+    // Retrieve full message history for this chat (only past successfully completed messages)
     const historyRes = await query(
       'SELECT role, content FROM messages WHERE chat_id = $1 ORDER BY created_at ASC',
       [chatId]
@@ -124,11 +118,30 @@ export async function POST(request: Request) {
     const relevantEssays = getRelevantEssays(content);
     const dynamicSystemInstruction = buildSystemInstruction(relevantEssays);
 
-    // Map roles to Gemini API ('user' or 'model')
-    const contents = historyMessages.map((m: { role: string; content: string }) => ({
+    // Map roles to Gemini API format, appending the current query at the end
+    const rawContents = historyMessages.map((m: { role: string; content: string }) => ({
       role: m.role === 'assistant' ? 'model' : 'user',
       parts: [{ text: m.content }]
     }));
+    rawContents.push({
+      role: 'user',
+      parts: [{ text: content }]
+    });
+
+    // Clean up contents to ensure strictly alternating roles starting with 'user'
+    const contents: { role: string; parts: { text: string }[] }[] = [];
+    for (const msg of rawContents) {
+      if (contents.length > 0 && contents[contents.length - 1].role === msg.role) {
+        contents[contents.length - 1].parts[0].text += '\n\n' + msg.parts[0].text;
+      } else {
+        contents.push(msg);
+      }
+    }
+
+    // Ensure the sequence starts with 'user'
+    if (contents.length > 0 && contents[0].role === 'model') {
+      contents.shift();
+    }
     // change model name if u want to use other model other than gemini-3.5-flash
     let response: Response | null = null;
     let retries = 3;
@@ -179,7 +192,11 @@ export async function POST(request: Request) {
     const data = await response.json();
     const candidateText = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response generated.';
 
-    // Save assistant's response
+    // Save user's message and assistant's response to database upon success
+    await query(
+      "INSERT INTO messages (chat_id, role, content, created_at) VALUES ($1, 'user', $2, NOW())",
+      [chatId, content]
+    );
     await query(
       "INSERT INTO messages (chat_id, role, content, created_at) VALUES ($1, 'assistant', $2, NOW())",
       [chatId, candidateText]
