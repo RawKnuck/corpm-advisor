@@ -72,41 +72,75 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid chatId or content.' }, { status: 400 });
     }
 
-    // Verify chat session exists and belongs to the user
-    const chatRes = await query('SELECT user_id FROM chats WHERE id = $1', [chatId]);
+    // Verify chat session exists and belongs to the user; also fetch RAG cache columns
+    const chatRes = await query(
+      'SELECT user_id, cached_system_prompt, rag_turn_count FROM chats WHERE id = $1',
+      [chatId]
+    );
     if (chatRes.rows.length === 0) {
       return NextResponse.json({ error: 'Chat not found.' }, { status: 404 });
     }
-    if (chatRes.rows[0].user_id !== userId) {
+    const chatRow = chatRes.rows[0];
+    if (chatRow.user_id !== userId) {
       return NextResponse.json({ error: 'Forbidden.' }, { status: 403 });
     }
 
-    // Retrieve full message history for this chat (only past successfully completed messages)
+    // Retrieve last 20 messages for this chat (DESC + reverse keeps oldest-first order for LLM)
     const historyRes = await query(
-      'SELECT role, content FROM messages WHERE chat_id = $1 ORDER BY created_at ASC',
+      'SELECT role, content FROM messages WHERE chat_id = $1 ORDER BY created_at DESC LIMIT 20',
       [chatId]
     );
-    const historyMessages = historyRes.rows;
+    const historyMessages = historyRes.rows.reverse();
 
-    // Get relevant essays using pgvector semantic similarity search
-    let relevantEssays: Essay[] = [];
-    try {
-      const queryVector = await embedQuery(content, apiKey);
-      const vectorStr = '[' + queryVector.join(',') + ']';
-      const essaysRes = await query(
-        'SELECT title, url, content FROM essays ORDER BY embedding <=> $1::vector LIMIT 4',
-        [vectorStr]
+    // RAG cache: skip re-embedding if this chat already has a cached system prompt < 10 turns old
+    // ponytail: RAG_REFRESH_EVERY=10 — upgrade path: cosine-distance drift detection
+    const RAG_REFRESH_EVERY = 10;
+    let dynamicSystemInstruction: string;
+
+    if (chatRow.cached_system_prompt && chatRow.rag_turn_count < RAG_REFRESH_EVERY) {
+      dynamicSystemInstruction = chatRow.cached_system_prompt;
+    } else {
+      // Fresh embed + RAG search
+      let relevantEssays: Essay[] = [];
+      try {
+        const queryVector = await embedQuery(content, apiKey);
+        const vectorStr = '[' + queryVector.join(',') + ']';
+        // Query chunk-level table for higher retrieval precision; dedup to max 2 chunks per essay
+        const chunksRes = await query(
+          `SELECT essay_title AS title, essay_url AS url, content
+           FROM essay_chunks ORDER BY embedding <=> $1::vector LIMIT 8`,
+          [vectorStr]
+        );
+        const seen = new Map<string, number>();
+        relevantEssays = (chunksRes.rows as Essay[]).filter((row) => {
+          const count = seen.get(row.title) ?? 0;
+          if (count >= 2) return false;
+          seen.set(row.title, count + 1);
+          return true;
+        });
+      } catch (embedErr) {
+        console.error('Chunk RAG search failed, trying whole-essay fallback:', embedErr);
+        try {
+          const queryVector = await embedQuery(content, apiKey);
+          const vectorStr = '[' + queryVector.join(',') + ']';
+          const essaysRes = await query(
+            'SELECT title, url, content FROM essays ORDER BY embedding <=> $1::vector LIMIT 4',
+            [vectorStr]
+          );
+          relevantEssays = essaysRes.rows;
+        } catch {
+          // Last resort: grab first 4 essays from database
+          const fallbackRes = await query('SELECT title, url, content FROM essays LIMIT 4');
+          relevantEssays = fallbackRes.rows;
+        }
+      }
+      dynamicSystemInstruction = buildSystemInstruction(relevantEssays);
+      // Persist to cache and reset turn counter
+      await query(
+        'UPDATE chats SET cached_system_prompt = $1, rag_turn_count = 0 WHERE id = $2',
+        [dynamicSystemInstruction, chatId]
       );
-      relevantEssays = essaysRes.rows;
-    } catch (embedErr) {
-      console.error('Failed to run semantic RAG search, falling back to database defaults:', embedErr);
-      // Fallback: grab first 4 default essays from database
-      const fallbackRes = await query(
-        'SELECT title, url, content FROM essays LIMIT 4'
-      );
-      relevantEssays = fallbackRes.rows;
     }
-    const dynamicSystemInstruction = buildSystemInstruction(relevantEssays);
 
     // Map roles to Gemini API format, appending the current query at the end
     const rawContents = historyMessages.map((m: { role: string; content: string }) => ({
@@ -192,9 +226,9 @@ export async function POST(request: Request) {
       [chatId, candidateText]
     );
 
-    // Update chat session timestamp
+    // Update chat session timestamp and increment RAG turn counter
     await query(
-      'UPDATE chats SET updated_at = NOW() WHERE id = $1',
+      'UPDATE chats SET updated_at = NOW(), rag_turn_count = rag_turn_count + 1 WHERE id = $1',
       [chatId]
     );
 
