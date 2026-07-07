@@ -2,8 +2,6 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { query } from '@/lib/db';
-import fs from 'fs';
-import path from 'path';
 
 interface Essay {
   title: string;
@@ -11,50 +9,26 @@ interface Essay {
   content: string;
 }
 
-// Load essays once at startup
-const essaysPath = path.join(process.cwd(), 'src/data/essays.json');
-let essays: Essay[] = [];
-try {
-  essays = JSON.parse(fs.readFileSync(essaysPath, 'utf-8'));
-} catch (err) {
-  console.error('Failed to load essays:', err);
-}
+async function embedQuery(text: string, apiKey: string): Promise<number[]> {
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-2:embedContent?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        content: {
+          parts: [{ text }]
+        }
+      })
+    }
+  );
 
-const STOP_WORDS = new Set(['the', 'a', 'an', 'and', 'or', 'but', 'is', 'are', 'was', 'were', 'to', 'for', 'in', 'of', 'on', 'with', 'at', 'by', 'from', 'how', 'what', 'why', 'who', 'i', 'you', 'he', 'she', 'they', 'we', 'my', 'your', 'me', 'them']);
-
-function getRelevantEssays(userInput: string, limit = 4): Essay[] {
-  const keywords = userInput
-    .toLowerCase()
-    .replace(/[^\w\s]/g, '')
-    .split(/\s+/)
-    .filter(word => word.length > 2 && !STOP_WORDS.has(word));
-
-  if (keywords.length === 0) {
-    return essays.slice(0, limit);
+  if (!response.ok) {
+    throw new Error(`Failed to generate query embedding: ${response.status}`);
   }
 
-  const scored = essays.map(essay => {
-    let score = 0;
-    const titleLower = essay.title.toLowerCase();
-    const contentLower = essay.content.toLowerCase();
-
-    keywords.forEach(keyword => {
-      if (titleLower.includes(keyword)) {
-        score += 10;
-      }
-      const matches = contentLower.split(keyword).length - 1;
-      score += matches;
-    });
-
-    return { essay, score };
-  });
-
-  const sorted = scored
-    .filter(item => item.score > 0)
-    .sort((a, b) => b.score - a.score)
-    .map(item => item.essay);
-
-  return sorted.length > 0 ? sorted.slice(0, limit) : essays.slice(0, limit);
+  const data = await response.json();
+  return data.embedding.values;
 }
 
 function buildSystemInstruction(relevantEssays: Essay[]) {
@@ -114,8 +88,24 @@ export async function POST(request: Request) {
     );
     const historyMessages = historyRes.rows;
 
-    // Get the user's latest query to find relevant essays
-    const relevantEssays = getRelevantEssays(content);
+    // Get relevant essays using pgvector semantic similarity search
+    let relevantEssays: Essay[] = [];
+    try {
+      const queryVector = await embedQuery(content, apiKey);
+      const vectorStr = '[' + queryVector.join(',') + ']';
+      const essaysRes = await query(
+        'SELECT title, url, content FROM essays ORDER BY embedding <=> $1::vector LIMIT 4',
+        [vectorStr]
+      );
+      relevantEssays = essaysRes.rows;
+    } catch (embedErr) {
+      console.error('Failed to run semantic RAG search, falling back to database defaults:', embedErr);
+      // Fallback: grab first 4 default essays from database
+      const fallbackRes = await query(
+        'SELECT title, url, content FROM essays LIMIT 4'
+      );
+      relevantEssays = fallbackRes.rows;
+    }
     const dynamicSystemInstruction = buildSystemInstruction(relevantEssays);
 
     // Map roles to Gemini API format, appending the current query at the end
