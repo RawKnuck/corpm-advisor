@@ -471,3 +471,44 @@ body {
 .sidebar-chat-list::-webkit-scrollbar {
   display: none;
 }
+
+/* ── Skeleton loaders ───────────────────────────────── */
+.skeleton-msg {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 1.75rem;
+  animation: pulse 1.5s infinite ease-in-out;
+}
+
+.skeleton-msg.user {
+  align-items: flex-end;
+}
+
+.skeleton-meta {
+  height: 12px;
+  width: 140px;
+  background-color: var(--border-color);
+  opacity: 0.15;
+  margin-bottom: 2px;
+}
+
+.skeleton-meta.user {
+  width: 110px;
+}
+
+.skeleton-line {
+  height: 15px;
+  background-color: var(--border-color);
+  opacity: 0.08;
+}
+
+.skeleton-line.user {
+  opacity: 0.06;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.6; }
+  50% { opacity: 0.9; }
+  100% { opacity: 0.6; }
+}

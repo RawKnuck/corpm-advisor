@@ -15,7 +15,19 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ activeChatId }: SidebarProps) {
-  const [chats, setChats] = useState<Chat[]>([]);
+  const [chats, setChats] = useState<Chat[]>(() => {
+    if (typeof window !== "undefined") {
+      const cached = sessionStorage.getItem("cached_chats");
+      if (cached) {
+        try {
+          return JSON.parse(cached);
+        } catch {
+          return [];
+        }
+      }
+    }
+    return [];
+  });
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [editingChatId, setEditingChatId] = useState<string | null>(null);
@@ -27,7 +39,11 @@ export default function Sidebar({ activeChatId }: SidebarProps) {
       const res = await fetch("/api/chats");
       if (res.ok) {
         const data = await res.json();
-        setChats(data.chats || []);
+        const list = data.chats || [];
+        setChats(list);
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem("cached_chats", JSON.stringify(list));
+        }
       }
     } catch (err) {
       console.error("Error fetching chats:", err);
@@ -49,6 +65,11 @@ export default function Sidebar({ activeChatId }: SidebarProps) {
       });
       if (res.ok) {
         const data = await res.json();
+        const updatedList = [data.chat, ...chats];
+        setChats(updatedList);
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem("cached_chats", JSON.stringify(updatedList));
+        }
         router.push(`/chat/${data.chat.id}`);
       }
     } catch (err) {
@@ -64,10 +85,13 @@ export default function Sidebar({ activeChatId }: SidebarProps) {
     try {
       const res = await fetch(`/api/chats/${id}`, { method: "DELETE" });
       if (res.ok) {
+        const updatedList = chats.filter((c) => c.id !== id);
+        setChats(updatedList);
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem("cached_chats", JSON.stringify(updatedList));
+        }
         if (activeChatId === id) {
           router.push("/");
-        } else {
-          fetchChats();
         }
       }
     } catch (err) {
@@ -93,9 +117,13 @@ export default function Sidebar({ activeChatId }: SidebarProps) {
         body: JSON.stringify({ title: editTitle.trim() }),
       });
       if (res.ok) {
-        setChats((prev) =>
-          prev.map((c) => (c.id === id ? { ...c, title: editTitle.trim() } : c))
+        const updatedList = chats.map((c) =>
+          c.id === id ? { ...c, title: editTitle.trim() } : c
         );
+        setChats(updatedList);
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem("cached_chats", JSON.stringify(updatedList));
+        }
       }
     } catch (err) {
       console.error("Error renaming chat:", err);
@@ -106,6 +134,9 @@ export default function Sidebar({ activeChatId }: SidebarProps) {
 
   const handleSignOut = async () => {
     const { signOut } = await import("next-auth/react");
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem("cached_chats");
+    }
     await signOut({ callbackUrl: "/login" });
   };
 

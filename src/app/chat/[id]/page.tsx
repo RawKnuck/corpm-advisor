@@ -141,67 +141,80 @@ export default function ChatPage({ params }: PageProps) {
             <div className="latex-divider"></div>
           </header>
 
-          {initializing ? (
-            <div style={{ fontStyle: "italic", textAlign: "center", padding: "3rem" }}>
-              Retrieving scroll transcript...
-            </div>
-          ) : (
-            <>
-              <section className="chat-log">
-                {messages.map((m, idx) => (
-                  <div key={idx} className="message-block">
-                    <div className={`message-meta ${m.role === 'user' ? 'user' : 'advisor'}`}>
-                      {m.role === 'user' ? 'Consultant (You)' : 'Advisor'}
-                    </div>
-                    <div className="message-content">{renderMarkdown(m.content)}</div>
-                  </div>
-                ))}
-
-                {loading && (
-                  <div className="status-indicator">
-                    The Advisor is formulating counsel...
-                  </div>
-                )}
-
-                {error && (
-                  <div className="error-banner">
-                    Error: {error}
-                  </div>
-                )}
-                
-                <div ref={chatEndRef} />
-              </section>
-
-              <form onSubmit={handleSubmit} className="input-form">
-                <div className="input-row">
-                  <textarea
-                    ref={textareaRef}
-                    className="chat-input"
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="Describe your situation (e.g., job interview, office politics)..."
-                    disabled={loading}
-                    required
-                    autoFocus
-                    rows={1}
-                    style={{
-                      resize: 'none',
-                      overflowY: 'auto',
-                      minHeight: '44px',
-                      maxHeight: '200px',
-                      paddingTop: '10px',
-                      paddingBottom: '10px',
-                      lineHeight: '1.4',
-                    }}
-                  />
-                  <button type="submit" className="submit-btn" disabled={loading}>
-                    Consult
-                  </button>
+          <section className="chat-log">
+            {initializing ? (
+              <>
+                <div className="skeleton-msg">
+                  <div className="skeleton-meta"></div>
+                  <div className="skeleton-line" style={{ width: "90%" }}></div>
+                  <div className="skeleton-line" style={{ width: "95%" }}></div>
+                  <div className="skeleton-line" style={{ width: "50%" }}></div>
                 </div>
-              </form>
-            </>
-          )}
+                <div className="skeleton-msg user">
+                  <div className="skeleton-meta user"></div>
+                  <div className="skeleton-line user" style={{ width: "40%" }}></div>
+                </div>
+                <div className="skeleton-msg">
+                  <div className="skeleton-meta"></div>
+                  <div className="skeleton-line" style={{ width: "92%" }}></div>
+                  <div className="skeleton-line" style={{ width: "85%" }}></div>
+                  <div className="skeleton-line" style={{ width: "30%" }}></div>
+                </div>
+              </>
+            ) : (
+              messages.map((m, idx) => (
+                <div key={idx} className="message-block">
+                  <div className={`message-meta ${m.role === 'user' ? 'user' : 'advisor'}`}>
+                    {m.role === 'user' ? 'Consultant (You)' : 'Advisor'}
+                  </div>
+                  <div className="message-content">{renderMarkdown(m.content)}</div>
+                </div>
+              ))
+            )}
+
+            {loading && (
+              <div className="status-indicator">
+                The Advisor is formulating counsel...
+              </div>
+            )}
+
+            {error && (
+              <div className="error-banner">
+                Error: {error}
+              </div>
+            )}
+            
+            <div ref={chatEndRef} />
+          </section>
+
+          <form onSubmit={handleSubmit} className="input-form">
+            <div className="input-row">
+              <textarea
+                ref={textareaRef}
+                className="chat-input"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Describe your situation (e.g., job interview, office politics)..."
+                disabled={loading || initializing}
+                required
+                autoFocus
+                rows={1}
+                style={{
+                  resize: 'none',
+                  overflowY: 'auto',
+                  minHeight: '44px',
+                  maxHeight: '200px',
+                  paddingTop: '10px',
+                  paddingBottom: '10px',
+                  lineHeight: '1.4',
+                }}
+              />
+              <button type="submit" className="submit-btn" disabled={loading || initializing}>
+                Consult
+              </button>
+            </div>
+          </form>
         </main>
       </div>
     </div>
