@@ -1,6 +1,5 @@
 import NextAuth, { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
-import CredentialsProvider from "next-auth/providers/credentials";
 import { query } from "@/lib/db";
 import crypto from "crypto";
 
@@ -9,43 +8,6 @@ export const authOptions: NextAuthOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID || "",
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
-    }),
-    CredentialsProvider({
-      name: "Credentials",
-      credentials: {
-        email: { label: "Email", type: "email" },
-        name: { label: "Name", type: "text" },
-      },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.name) {
-          return null;
-        }
-        const email = credentials.email;
-        const name = credentials.name;
-
-        // Query the users table via raw SQL to check if the user exists
-        const res = await query("SELECT * FROM users WHERE email = $1", [email]);
-        let user = res.rows[0];
-
-        if (!user) {
-          // If not, insert them via raw SQL
-          const id = crypto.randomUUID();
-          const insertRes = await query(
-            "INSERT INTO users (id, email, name, created_at) VALUES ($1, $2, $3, NOW()) RETURNING *",
-            [id, email, name]
-          );
-          user = insertRes.rows[0];
-        } else {
-          user.name = name;
-        }
-
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          image: user.image,
-        };
-      },
     }),
   ],
   callbacks: {
