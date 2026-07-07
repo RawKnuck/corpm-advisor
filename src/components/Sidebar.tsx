@@ -35,18 +35,7 @@ export default function Sidebar({ activeChatId }: SidebarProps) {
   };
 
   useEffect(() => {
-    async function loadChats() {
-      try {
-        const res = await fetch("/api/chats");
-        if (res.ok) {
-          const data = await res.json();
-          setChats(data.chats || []);
-        }
-      } catch (err) {
-        console.error("Error fetching chats:", err);
-      }
-    }
-    loadChats();
+    fetchChats();
   }, []);
 
   const handleNewChat = async () => {
@@ -70,12 +59,10 @@ export default function Sidebar({ activeChatId }: SidebarProps) {
   };
 
   const handleDeleteChat = async (id: string, e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent navigation
+    e.stopPropagation();
     if (!confirm("Are you sure you want to delete this strategic session?")) return;
     try {
-      const res = await fetch(`/api/chats/${id}`, {
-        method: "DELETE",
-      });
+      const res = await fetch(`/api/chats/${id}`, { method: "DELETE" });
       if (res.ok) {
         if (activeChatId === id) {
           router.push("/");
@@ -124,46 +111,18 @@ export default function Sidebar({ activeChatId }: SidebarProps) {
 
   if (isCollapsed) {
     return (
-      <aside style={{
-        width: "50px",
-        borderRight: "1px solid var(--border-color)",
-        backgroundColor: "#fcfbfa",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        padding: "1rem 0",
-        height: "100vh",
-        position: "sticky",
-        top: 0,
-      }}>
+      <aside className="sidebar-collapsed">
         <button
           onClick={() => setIsCollapsed(false)}
           title="Expand Sidebar"
-          style={{
-            background: "none",
-            border: "1px solid var(--border-color)",
-            color: "var(--text-color)",
-            padding: "5px 10px",
-            cursor: "pointer",
-            fontFamily: "inherit",
-            fontSize: "1rem",
-            marginBottom: "1rem",
-          }}
+          className="sidebar-icon-btn"
         >
           →
         </button>
         <button
           onClick={handleNewChat}
           title="New Chat"
-          style={{
-            background: "none",
-            border: "1px solid var(--border-color)",
-            color: "var(--text-color)",
-            padding: "5px 10px",
-            cursor: "pointer",
-            fontFamily: "inherit",
-            fontSize: "1rem",
-          }}
+          className="sidebar-icon-btn"
         >
           ＋
         </button>
@@ -172,40 +131,13 @@ export default function Sidebar({ activeChatId }: SidebarProps) {
   }
 
   return (
-    <aside style={{
-      width: "280px",
-      borderRight: "1px solid var(--border-color)",
-      backgroundColor: "#fcfbfa",
-      display: "flex",
-      flexDirection: "column",
-      padding: "1.5rem 1rem",
-      height: "100vh",
-      position: "sticky",
-      top: 0,
-      overflowY: "auto",
-    }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
-        <h3 style={{
-          fontSize: "1.1rem",
-          fontWeight: "normal",
-          textTransform: "uppercase",
-          letterSpacing: "0.5px",
-          fontFamily: "inherit",
-        }}>
-          Sessions
-        </h3>
+    <aside className="sidebar">
+      <div className="sidebar-header">
+        <span className="sidebar-label">Sessions</span>
         <button
           onClick={() => setIsCollapsed(true)}
           title="Collapse Sidebar"
-          style={{
-            background: "none",
-            border: "1px solid var(--border-color)",
-            color: "var(--text-color)",
-            padding: "2px 8px",
-            cursor: "pointer",
-            fontFamily: "inherit",
-            fontSize: "0.85rem",
-          }}
+          className="sidebar-collapse-btn"
         >
           ←
         </button>
@@ -214,27 +146,14 @@ export default function Sidebar({ activeChatId }: SidebarProps) {
       <button
         onClick={handleNewChat}
         disabled={loading}
-        style={{
-          width: "100%",
-          padding: "8px 12px",
-          background: "none",
-          border: "1px solid var(--border-color)",
-          color: "var(--text-color)",
-          fontFamily: "inherit",
-          fontSize: "0.95rem",
-          cursor: "pointer",
-          marginBottom: "1.5rem",
-          textAlign: "center",
-        }}
+        className="sidebar-new-btn"
       >
         {loading ? "Creating..." : "＋ New Consultation"}
       </button>
 
-      <div style={{ flexGrow: 1, display: "flex", flexDirection: "column", gap: "8px", overflowY: "auto", marginBottom: "1.5rem" }}>
+      <div className="sidebar-chat-list">
         {chats.length === 0 ? (
-          <div style={{ fontStyle: "italic", fontSize: "0.9rem", color: "gray", padding: "10px 0" }}>
-            No past sessions.
-          </div>
+          <div className="sidebar-empty">No past sessions.</div>
         ) : (
           chats.map((chat) => {
             const isActive = chat.id === activeChatId;
@@ -243,23 +162,8 @@ export default function Sidebar({ activeChatId }: SidebarProps) {
               <div
                 key={chat.id}
                 onClick={() => !isEditing && router.push(`/chat/${chat.id}`)}
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  padding: "8px 10px",
-                  border: isActive ? "1.5px solid var(--border-color)" : "1px solid transparent",
-                  backgroundColor: isActive ? "rgba(0,0,0,0.03)" : "transparent",
-                  cursor: isEditing ? "default" : "pointer",
-                  fontSize: "0.95rem",
-                  fontFamily: "inherit",
-                }}
-                onMouseEnter={(e) => {
-                  if (!isActive && !isEditing) e.currentTarget.style.backgroundColor = "rgba(0,0,0,0.02)";
-                }}
-                onMouseLeave={(e) => {
-                  if (!isActive && !isEditing) e.currentTarget.style.backgroundColor = "transparent";
-                }}
+                className={`sidebar-chat-item${isActive ? " active" : ""}`}
+                style={{ cursor: isEditing ? "default" : "pointer" }}
               >
                 {isEditing ? (
                   <input
@@ -272,58 +176,25 @@ export default function Sidebar({ activeChatId }: SidebarProps) {
                       if (e.key === "Escape") setEditingChatId(null);
                     }}
                     autoFocus
-                    style={{
-                      flexGrow: 1,
-                      fontFamily: "inherit",
-                      fontSize: "0.95rem",
-                      padding: "2px 4px",
-                      border: "1px solid var(--border-color)",
-                      outline: "none",
-                      backgroundColor: "transparent",
-                      color: "var(--text-color)",
-                    }}
+                    className="sidebar-edit-input"
                   />
                 ) : (
                   <>
-                    <span style={{
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                      marginRight: "8px",
-                      fontWeight: isActive ? "bold" : "normal",
-                      flexGrow: 1,
-                    }}>
+                    <span className={`sidebar-chat-title${isActive ? " active" : ""}`}>
                       {chat.title}
                     </span>
-                    <div style={{ display: "flex", gap: "4px" }}>
+                    <div className="sidebar-chat-actions">
                       <button
                         onClick={(e) => startRename(chat.id, chat.title, e)}
                         title="Rename Session"
-                        style={{
-                          background: "none",
-                          border: "none",
-                          color: "var(--text-color)",
-                          cursor: "pointer",
-                          fontSize: "0.85rem",
-                          padding: "2px 6px",
-                          opacity: 0.6,
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.opacity = "1"}
-                        onMouseLeave={(e) => e.currentTarget.style.opacity = "0.6"}
+                        className="sidebar-action-btn"
                       >
                         ✎
                       </button>
                       <button
                         onClick={(e) => handleDeleteChat(chat.id, e)}
                         title="Delete Session"
-                        style={{
-                          background: "none",
-                          border: "none",
-                          color: "var(--accent-color)",
-                          cursor: "pointer",
-                          fontSize: "0.85rem",
-                          padding: "2px 6px",
-                        }}
+                        className="sidebar-delete-btn"
                       >
                         ✕
                       </button>
@@ -336,21 +207,8 @@ export default function Sidebar({ activeChatId }: SidebarProps) {
         )}
       </div>
 
-      <div style={{ borderTop: "0.5px solid var(--border-color)", paddingTop: "1rem", display: "flex", flexDirection: "column", gap: "8px" }}>
-        <button
-          onClick={handleSignOut}
-          style={{
-            width: "100%",
-            padding: "6px 12px",
-            background: "none",
-            border: "1.5px solid var(--border-color)",
-            color: "var(--text-color)",
-            fontFamily: "inherit",
-            fontSize: "0.9rem",
-            cursor: "pointer",
-            textAlign: "center",
-          }}
-        >
+      <div className="sidebar-footer">
+        <button onClick={handleSignOut} className="sidebar-signout-btn">
           Sign Out
         </button>
       </div>

@@ -1,11 +1,15 @@
-@import url('https://cdn.jsdelivr.net/npm/@fontsource/latin-modern-roman@5.0.8/index.css');
+@import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap');
 
 :root {
-  --bg-color: #fcfbfa;       /* cream paper background (#fcfbfa) */
-  --text-color: #1c1b18;     /* Deep charcoal text */
-  --border-color: #2b2a27;   /* Thin black/slate border */
-  --accent-color: #8b0000;   /* Deep crimson for errors/emphasis */
+  --bg-color: #faf9f7;
+  --sidebar-bg: #f0ede8;
+  --text-color: #1c1b18;
+  --border-color: #2b2a27;
+  --accent-color: #8b0000;
   --input-bg: #ffffff;
+  --muted: rgba(28, 27, 24, 0.45);
+  --hover-bg: rgba(28, 27, 24, 0.04);
+  --active-bg: rgba(28, 27, 24, 0.07);
 }
 
 * {
@@ -17,13 +21,14 @@
 body {
   background-color: var(--bg-color);
   color: var(--text-color);
-  font-family: "Latin Modern Roman", "Latin Modern Roman 10 Regular", Georgia, "Times New Roman", serif;
-  font-size: 16px;
-  line-height: 1.6;
+  font-family: "EB Garamond", Georgia, "Times New Roman", serif;
+  font-size: 17px;
+  line-height: 1.65;
   text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Page layouts */
+/* ── Page layouts ────────────────────────────────────── */
 .centered-layout {
   padding: 3rem 1.5rem;
   display: flex;
@@ -41,76 +46,75 @@ body {
 
 .sidebar-main-content {
   flex-grow: 1;
-  padding: 1.5rem 1.5rem;
+  padding: 1.75rem 2rem;
   display: flex;
   justify-content: center;
   overflow-y: auto;
   height: 100vh;
 }
 
-
-/* Main Academic Paper Wrapper */
+/* ── Paper container ─────────────────────────────────── */
 .paper-container {
   width: 100%;
-  max-width: 720px;
+  max-width: 700px;
   display: flex;
   flex-direction: column;
   min-height: 90vh;
   position: relative;
 }
 
-/* LaTeX Style Header */
+/* ── Header ──────────────────────────────────────────── */
 .academic-header {
   text-align: center;
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
 }
 
 .academic-title {
-  font-size: 1.6rem;
-  font-weight: normal;
+  font-size: 1.65rem;
+  font-weight: 500;
   letter-spacing: 0.5px;
-  margin-bottom: 0.2rem;
+  margin-bottom: 0.25rem;
 }
 
 .academic-subtitle {
   font-size: 0.95rem;
   font-style: italic;
-  margin-bottom: 0.8rem;
-  opacity: 0.8;
+  margin-bottom: 1rem;
+  opacity: 0.6;
 }
 
-/* Double horizontal lines typical of LaTeX headers */
+/* Double rule — classic LaTeX header convention */
 .latex-divider {
   border-top: 1.5px solid var(--border-color);
   border-bottom: 0.5px solid var(--border-color);
   height: 4px;
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
 }
 
-/* Chat Log Area */
+/* ── Chat log ────────────────────────────────────────── */
 .chat-log {
   flex-grow: 1;
   overflow-y: auto;
   margin-bottom: 2rem;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.75rem;
 }
 
-/* LaTeX Message block */
 .message-block {
   text-align: justify;
   text-justify: inter-word;
 }
 
 .message-meta {
-  font-size: 0.85rem;
-  font-weight: bold;
-  letter-spacing: 1px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 1.5px;
   text-transform: uppercase;
-  margin-bottom: 0.35rem;
+  margin-bottom: 0.4rem;
+  padding-bottom: 3px;
   border-bottom: 0.5px dashed var(--border-color);
-  padding-bottom: 2px;
+  opacity: 0.55;
 }
 
 .message-meta.user {
@@ -124,9 +128,10 @@ body {
 .message-content {
   font-size: 1.05rem;
   white-space: pre-wrap;
+  line-height: 1.7;
 }
 
-/* Input Form */
+/* ── Input form ──────────────────────────────────────── */
 .input-form {
   margin-top: auto;
 }
@@ -134,20 +139,21 @@ body {
 .input-row {
   display: flex;
   align-items: flex-end;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
 }
 
 .chat-input {
   flex-grow: 1;
   font-family: inherit;
-  font-size: 1.05rem;
+  font-size: 1rem;
   background-color: var(--input-bg);
   color: var(--text-color);
   border: 1px solid var(--border-color);
-  border-radius: 0; /* Strict no rounded corners */
+  border-radius: 0;
   padding: 10px 14px;
   outline: none;
+  transition: border-color 0.15s;
 }
 
 .chat-input:focus {
@@ -156,14 +162,16 @@ body {
 
 .submit-btn {
   font-family: inherit;
-  font-size: 1.05rem;
+  font-size: 1rem;
   background-color: var(--text-color);
   color: var(--bg-color);
   border: 1px solid var(--border-color);
   border-radius: 0;
-  padding: 10px 24px;
+  padding: 10px 26px;
   cursor: pointer;
-  transition: all 0.15s ease;
+  letter-spacing: 0.5px;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
 }
 
 .submit-btn:hover {
@@ -172,39 +180,294 @@ body {
 }
 
 .submit-btn:disabled {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: not-allowed;
 }
 
-/* Status Indicator */
+/* ── Status & errors ─────────────────────────────────── */
 .status-indicator {
   font-style: italic;
   font-size: 0.95rem;
   margin-top: 8px;
-  opacity: 0.8;
+  opacity: 0.55;
 }
 
-/* Error banner */
 .error-banner {
   border: 1px solid var(--accent-color);
   color: var(--accent-color);
-  padding: 10px;
+  padding: 10px 14px;
   margin-bottom: 1rem;
   font-style: italic;
+  font-size: 0.95rem;
 }
 
-/* Hide scrollbars visually while retaining scrolling functions */
+/* ── Sidebar ─────────────────────────────────────────── */
+.sidebar {
+  width: 260px;
+  border-right: 1px solid var(--border-color);
+  background-color: var(--sidebar-bg);
+  display: flex;
+  flex-direction: column;
+  padding: 1.25rem 1rem;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.sidebar-collapsed {
+  width: 48px;
+  border-right: 1px solid var(--border-color);
+  background-color: var(--sidebar-bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem 0;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  flex-shrink: 0;
+}
+
+.sidebar-icon-btn {
+  background: none;
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+  padding: 4px 10px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 1rem;
+  margin-bottom: 0.75rem;
+  transition: background 0.15s;
+}
+
+.sidebar-icon-btn:hover {
+  background-color: var(--hover-bg);
+}
+
+.sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+}
+
+.sidebar-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-family: inherit;
+  opacity: 0.5;
+}
+
+.sidebar-collapse-btn {
+  background: none;
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+  padding: 2px 8px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.85rem;
+  transition: background 0.15s;
+}
+
+.sidebar-collapse-btn:hover {
+  background-color: var(--hover-bg);
+}
+
+.sidebar-new-btn {
+  width: 100%;
+  padding: 8px 12px;
+  background: none;
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+  font-family: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  margin-bottom: 1.25rem;
+  text-align: center;
+  transition: background 0.15s;
+  letter-spacing: 0.3px;
+}
+
+.sidebar-new-btn:hover:not(:disabled) {
+  background-color: var(--hover-bg);
+}
+
+.sidebar-new-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.sidebar-chat-list {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  overflow-y: auto;
+  margin-bottom: 1.25rem;
+}
+
+.sidebar-empty {
+  font-style: italic;
+  font-size: 0.9rem;
+  opacity: 0.45;
+  padding: 8px 2px;
+}
+
+.sidebar-chat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 7px 8px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.sidebar-chat-item:hover {
+  background-color: var(--hover-bg);
+}
+
+.sidebar-chat-item.active {
+  border-color: var(--border-color);
+  background-color: var(--active-bg);
+}
+
+.sidebar-chat-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-right: 6px;
+  flex-grow: 1;
+  font-size: 0.9rem;
+}
+
+.sidebar-chat-title.active {
+  font-weight: 500;
+}
+
+.sidebar-chat-actions {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.sidebar-action-btn {
+  background: none;
+  border: none;
+  color: var(--text-color);
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 2px 5px;
+  opacity: 0.35;
+  transition: opacity 0.12s;
+  font-family: inherit;
+}
+
+.sidebar-action-btn:hover {
+  opacity: 1;
+}
+
+.sidebar-delete-btn {
+  background: none;
+  border: none;
+  color: var(--accent-color);
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 2px 5px;
+  opacity: 0.4;
+  transition: opacity 0.12s;
+  font-family: inherit;
+}
+
+.sidebar-delete-btn:hover {
+  opacity: 1;
+}
+
+.sidebar-edit-input {
+  flex-grow: 1;
+  font-family: inherit;
+  font-size: 0.9rem;
+  padding: 2px 4px;
+  border: 1px solid var(--border-color);
+  outline: none;
+  background-color: transparent;
+  color: var(--text-color);
+}
+
+.sidebar-footer {
+  border-top: 0.5px solid var(--border-color);
+  padding-top: 1rem;
+}
+
+.sidebar-signout-btn {
+  width: 100%;
+  padding: 7px 12px;
+  background: none;
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+  font-family: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+  text-align: center;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  transition: background 0.15s;
+}
+
+.sidebar-signout-btn:hover {
+  background-color: var(--hover-bg);
+}
+
+/* ── Login ───────────────────────────────────────────── */
+.login-card {
+  border: 1px solid var(--border-color);
+  padding: 2.5rem;
+  background-color: var(--input-bg);
+  width: 100%;
+  max-width: 440px;
+}
+
+.login-title {
+  font-size: 1.5rem;
+  font-weight: 500;
+  text-align: center;
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+}
+
+.login-description {
+  text-align: justify;
+  text-justify: inter-word;
+  font-size: 0.95rem;
+  margin-bottom: 1.75rem;
+  opacity: 0.7;
+  line-height: 1.75;
+}
+
+.login-google-btn {
+  width: 100%;
+}
+
+/* ── Scrollbar suppression ───────────────────────────── */
 .sidebar-main-content,
 .chat-log,
-aside,
-aside div {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+.sidebar,
+.sidebar-collapsed,
+.sidebar-chat-list {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 .sidebar-main-content::-webkit-scrollbar,
 .chat-log::-webkit-scrollbar,
-aside::-webkit-scrollbar,
-aside div::-webkit-scrollbar {
-  display: none;             /* Chrome, Safari, and Opera */
+.sidebar::-webkit-scrollbar,
+.sidebar-collapsed::-webkit-scrollbar,
+.sidebar-chat-list::-webkit-scrollbar {
+  display: none;
 }
