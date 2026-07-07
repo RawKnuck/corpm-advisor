@@ -26,10 +26,13 @@ export default function ChatPage({ params }: PageProps) {
 
   const chatEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const hasLoadedInitial = useRef(false);
 
   // Authentication check and history fetch
   useEffect(() => {
     async function init() {
+      hasLoadedInitial.current = false;
+      setInitializing(true);
       const session = await getSession();
       if (!session) {
         window.location.href = "/login";
@@ -63,6 +66,11 @@ export default function ChatPage({ params }: PageProps) {
         setError(err instanceof Error ? err.message : "An unexpected error occurred.");
       } finally {
         setInitializing(false);
+        // Snap instantly to bottom on load
+        setTimeout(() => {
+          chatEndRef.current?.scrollIntoView({ behavior: 'instant' });
+          hasLoadedInitial.current = true;
+        }, 50);
       }
     }
     init();
@@ -70,6 +78,7 @@ export default function ChatPage({ params }: PageProps) {
 
   // Auto scroll to bottom
   useEffect(() => {
+    if (!hasLoadedInitial.current) return;
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
 
