@@ -28,6 +28,9 @@ export default function ChatPage({ params }: PageProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const hasLoadedInitial = useRef(false);
 
+  const lastUserMsgIdx = [...messages].reverse().findIndex(m => m.role === 'user');
+  const lastUserIdx = lastUserMsgIdx !== -1 ? messages.length - 1 - lastUserMsgIdx : -1;
+
   // Authentication check and history fetch
   useEffect(() => {
     async function init() {
@@ -66,9 +69,14 @@ export default function ChatPage({ params }: PageProps) {
         setError(err instanceof Error ? err.message : "An unexpected error occurred.");
       } finally {
         setInitializing(false);
-        // Snap instantly to bottom on load
+        // Snap to last user message instantly on load
         setTimeout(() => {
-          chatEndRef.current?.scrollIntoView({ behavior: 'instant' });
+          const scrollTarget = document.getElementById("last-user-message");
+          if (scrollTarget) {
+            scrollTarget.scrollIntoView({ behavior: 'instant', block: 'start' });
+          } else {
+            chatEndRef.current?.scrollIntoView({ behavior: 'instant' });
+          }
           hasLoadedInitial.current = true;
         }, 50);
       }
@@ -172,7 +180,11 @@ export default function ChatPage({ params }: PageProps) {
               </>
             ) : (
               messages.map((m, idx) => (
-                <div key={idx} className="message-block">
+                <div 
+                  key={idx} 
+                  id={idx === lastUserIdx ? "last-user-message" : undefined}
+                  className="message-block"
+                >
                   <div className={`message-meta ${m.role === 'user' ? 'user' : 'advisor'}`}>
                     {m.role === 'user' ? 'Consultant (You)' : 'Advisor'}
                   </div>
