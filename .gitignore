@@ -36,6 +36,9 @@ yarn-error.log*
 # databases
 *.db
 
+# agents
+.agents/
+
 # vercel
 .vercel
 
