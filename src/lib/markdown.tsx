@@ -14,6 +14,7 @@ function parseBold(text: string): React.ReactNode[] {
 /**
  * ponytail: A zero-dependency, lightweight, JSX-based markdown parser
  * that supports bolding, headers, and bullet points without using dangerous HTML injection.
+ * Uses custom flex layouts for lists to override browser CSS overrides and resets.
  */
 export function renderMarkdown(text: string): React.ReactNode {
   if (!text) return null;
@@ -42,13 +43,15 @@ export function renderMarkdown(text: string): React.ReactNode {
           );
         }
 
-        // Unordered List Items (* or -)
-        if (trimmed.startsWith('* ') || trimmed.startsWith('- ')) {
-          const content = trimmed.slice(2);
+        // Bullet List Items (* or - or •)
+        const bulletMatch = trimmed.match(/^([\*\-•])\s(.*)/);
+        if (bulletMatch) {
+          const content = bulletMatch[2];
           return (
-            <li key={index} style={{ marginLeft: '1.5rem', listStyleType: 'disc', marginBlock: '0.3rem' }}>
-              {parseBold(content)}
-            </li>
+            <div key={index} style={{ display: 'flex', gap: '0.5rem', marginBlock: '0.35rem', paddingLeft: '1.25rem', textAlign: 'justify', lineHeight: '1.5' }}>
+              <span style={{ userSelect: 'none', opacity: 0.8 }}>•</span>
+              <div style={{ flexGrow: 1 }}>{parseBold(content)}</div>
+            </div>
           );
         }
 
@@ -58,9 +61,10 @@ export function renderMarkdown(text: string): React.ReactNode {
           const num = numberedMatch[1];
           const content = numberedMatch[2];
           return (
-            <li key={index} style={{ marginLeft: '1.5rem', listStyleType: 'decimal', marginBlock: '0.3rem' }}>
-              {parseBold(content)}
-            </li>
+            <div key={index} style={{ display: 'flex', gap: '0.6rem', marginBlock: '0.45rem', paddingLeft: '0.2rem', textAlign: 'justify', lineHeight: '1.5' }}>
+              <span style={{ fontWeight: 'bold', minWidth: '1.1rem', userSelect: 'none' }}>{num}.</span>
+              <div style={{ flexGrow: 1 }}>{parseBold(content)}</div>
+            </div>
           );
         }
 
