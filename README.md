@@ -1,34 +1,55 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# The Sovereign Advisor
 
-## Getting Started
+An AI-driven strategic consultant designed to provide counsel grounded in Machiavellian realism, historical power dynamics, and Robert Greene's 48 Laws of Power.
 
-First, run the development server:
+The application utilizes semantic search (Retrieval-Augmented Generation) to match user queries with a database of curated essays and laws, delivering precise context-aware strategic directives.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+---
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🛠️ Technology Stack
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Framework**: Next.js (App Router, dynamic API routes)
+- **Database**: Supabase PostgreSQL (utilizing the `pgvector` extension)
+- **LLM Engine**: Google Gemini API (leveraging structured text generation and embeddings)
+- **Authentication**: NextAuth.js (strictly enforced Google OAuth)
+- **Aesthetic**: Custom academic LaTeX theme (with stable layouts and pulsing skeleton loaders)
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## ⚡ Architectural Highlights
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. **Chunk-Level RAG**: A knowledge base of essays and laws segmented into semantically indexed vector chunks for highly precise context retrieval.
+2. **RAG Caching**: Intelligent session state tracking that skips expensive vector searches and token injection on chat turns 2–10 of active conversations.
+3. **Session-Level History Cap**: Context payload limited to a sliding window of the last 20 messages to ensure rapid response latencies and eliminate token bloat.
+4. **Stable Page Transitions**: Zero-flash client-side session caching and instant scroll snapping to target the user's last query on mount.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## ⚙️ Setup & Installation
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. **Environment Config**: Create a `.env` file in the root directory:
+   ```env
+   DATABASE_URL=your_postgres_connection_string
+   GEMINI_API_KEY=your_gemini_api_key
+   GOOGLE_CLIENT_ID=your_google_oauth_client_id
+   GOOGLE_CLIENT_SECRET=your_google_oauth_client_secret
+   NEXTAUTH_SECRET=your_nextauth_jwt_secret
+   NEXTAUTH_URL=http://localhost:3000
+   ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+2. **Install Dependencies**:
+   ```bash
+   npm install
+   ```
+
+3. **Database Migration & Seeding**:
+   ```bash
+   node src/scripts/migrate-add-chunks-table.mjs
+   node src/scripts/migrate-add-rag-cache.mjs
+   node src/scripts/seed-chunks.mjs
+   ```
+
+4. **Run Development Server**:
+   ```bash
+   npm run dev
+   ```
