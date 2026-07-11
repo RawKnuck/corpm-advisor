@@ -84,10 +84,15 @@ export default function ChatPage({ params }: PageProps) {
     init();
   }, [chatId, router]);
 
-  // Auto scroll to bottom
+  // Auto scroll to the last user question during active conversation
   useEffect(() => {
     if (!hasLoadedInitial.current) return;
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const scrollTarget = document.getElementById("last-user-message");
+    if (scrollTarget) {
+      scrollTarget.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
   }, [messages, loading]);
 
   // Auto-resize textarea
