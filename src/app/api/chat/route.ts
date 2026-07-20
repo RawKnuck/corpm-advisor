@@ -67,9 +67,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { chatId, content } = await request.json();
-    if (!chatId || !content || typeof chatId !== 'string' || typeof content !== 'string') {
-      return NextResponse.json({ error: 'Invalid chatId or content.' }, { status: 400 });
+    const { chatId, content, image } = await request.json();
+    if (!chatId || (typeof content !== 'string' && !image) || (typeof content === 'string' && !content.trim() && !image)) {
+      return NextResponse.json({ error: 'Invalid chatId, content, or image.' }, { status: 400 });
     }
 
     // Verify chat session exists and belongs to the user; also fetch RAG cache columns
@@ -87,7 +87,7 @@ export async function POST(request: Request) {
 
     // Retrieve last 20 messages for this chat (DESC + reverse keeps oldest-first order for LLM)
     const historyRes = await query(
-      'SELECT role, content FROM messages WHERE chat_id = $1 ORDER BY created_at DESC LIMIT 20',
+      'SELECT role, content, image_url FROM messages WHERE chat_id = $1 ORDER BY created_at DESC LIMIT 20',
       [chatId]
     );
     const historyMessages = historyRes.rows.reverse();
@@ -103,7 +103,8 @@ export async function POST(request: Request) {
       // Fresh embed + RAG search
       let relevantEssays: Essay[] = [];
       try {
-        const queryVector = await embedQuery(content, apiKey);
+        const textToEmbed = content && content.trim() ? content : 'User provided image for strategic analysis';
+        const queryVector = await embedQuery(textToEmbed, apiKey);
         const vectorStr = '[' + queryVector.join(',') + ']';
         // Query chunk-level table for higher retrieval precision; dedup to max 2 chunks per essay
         const chunksRes = await query(
@@ -121,7 +122,8 @@ export async function POST(request: Request) {
       } catch (embedErr) {
         console.error('Chunk RAG search failed, trying whole-essay fallback:', embedErr);
         try {
-          const queryVector = await embedQuery(content, apiKey);
+          const textToEmbed = content && content.trim() ? content : 'User provided image for strategic analysis';
+          const queryVector = await embedQuery(textToEmbed, apiKey);
           const vectorStr = '[' + queryVector.join(',') + ']';
           const essaysRes = await query(
             'SELECT title, url, content FROM essays ORDER BY embedding <=> $1::vector LIMIT 4',
@@ -142,21 +144,54 @@ export async function POST(request: Request) {
       );
     }
 
-    // Map roles to Gemini API format, appending the current query at the end
-    const rawContents = historyMessages.map((m: { role: string; content: string }) => ({
-      role: m.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: m.content }]
-    }));
+    // Map roles to Gemini API format, appending the current query and inlineData if present
+    const rawContents = historyMessages.map((m: { role: string; content: string; image_url?: string | null }) => {
+      const parts: any[] = [];
+      if (m.content) {
+        parts.push({ text: m.content });
+      }
+      if (m.image_url && typeof m.image_url === 'string' && m.image_url.startsWith('data:')) {
+        const [header, base64Data] = m.image_url.split(',');
+        const mimeType = header ? header.split(';')[0].replace('data:', '') : 'image/png';
+        parts.push({
+          inlineData: {
+            mimeType: mimeType || 'image/png',
+            data: base64Data
+          }
+        });
+      }
+      return {
+        role: m.role === 'assistant' ? 'model' : 'user',
+        parts
+      };
+    });
+
+    const currentParts: any[] = [];
+    if (content && content.trim()) {
+      currentParts.push({ text: content.trim() });
+    }
+    if (image && typeof image === 'string' && image.startsWith('data:')) {
+      const [header, base64Data] = image.split(',');
+      const mimeType = header ? header.split(';')[0].replace('data:', '') : 'image/png';
+      currentParts.push({
+        inlineData: {
+          mimeType: mimeType || 'image/png',
+          data: base64Data
+        }
+      });
+    }
+
     rawContents.push({
       role: 'user',
-      parts: [{ text: content }]
+      parts: currentParts
     });
 
     // Clean up contents to ensure strictly alternating roles starting with 'user'
-    const contents: { role: string; parts: { text: string }[] }[] = [];
+    const contents: { role: string; parts: any[] }[] = [];
     for (const msg of rawContents) {
+      if (!msg.parts || msg.parts.length === 0) continue;
       if (contents.length > 0 && contents[contents.length - 1].role === msg.role) {
-        contents[contents.length - 1].parts[0].text += '\n\n' + msg.parts[0].text;
+        contents[contents.length - 1].parts.push(...msg.parts);
       } else {
         contents.push(msg);
       }
@@ -166,7 +201,7 @@ export async function POST(request: Request) {
     if (contents.length > 0 && contents[0].role === 'model') {
       contents.shift();
     }
-    // change model name if u want to use other model other than gemini-3.5-flash
+    
     let response: Response | null = null;
     let retries = 3;
     let delay = 1000; // Start with 1 second delay
@@ -218,11 +253,11 @@ export async function POST(request: Request) {
 
     // Save user's message and assistant's response to database upon success
     await query(
-      "INSERT INTO messages (chat_id, role, content, created_at) VALUES ($1, 'user', $2, NOW())",
-      [chatId, content]
+      "INSERT INTO messages (chat_id, role, content, image_url, created_at) VALUES ($1, 'user', $2, $3, NOW())",
+      [chatId, content || '', image || null]
     );
     await query(
-      "INSERT INTO messages (chat_id, role, content, created_at) VALUES ($1, 'assistant', $2, NOW())",
+      "INSERT INTO messages (chat_id, role, content, image_url, created_at) VALUES ($1, 'assistant', $2, NULL, NOW())",
       [chatId, candidateText]
     );
 

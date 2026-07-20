@@ -512,3 +512,82 @@ body {
   50% { opacity: 0.9; }
   100% { opacity: 0.6; }
 }
+
+/* ── Image Attachments & Previews ───────────────────── */
+.attach-btn {
+  background-color: var(--input-bg);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  border-radius: 0;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-size: 1.1rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, opacity 0.15s;
+  height: 44px;
+  flex-shrink: 0;
+}
+
+.attach-btn:hover:not(:disabled) {
+  background-color: var(--hover-bg);
+}
+
+.attach-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.image-preview-bar {
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+}
+
+.image-preview-wrapper {
+  position: relative;
+  display: inline-block;
+  border: 1px solid var(--border-color);
+  background-color: var(--input-bg);
+  padding: 4px;
+}
+
+.image-preview-thumb {
+  max-width: 80px;
+  max-height: 80px;
+  object-fit: cover;
+  display: block;
+}
+
+.image-preview-remove-btn {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background-color: var(--accent-color);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  font-size: 11px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.message-image-container {
+  margin-top: 6px;
+  margin-bottom: 8px;
+}
+
+.message-image {
+  max-width: 100%;
+  max-height: 350px;
+  border: 1px solid var(--border-color);
+  object-fit: contain;
+  display: block;
+}

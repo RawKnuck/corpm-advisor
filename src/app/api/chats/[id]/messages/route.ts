@@ -26,7 +26,7 @@ export async function GET(
 
     // Retrieve message history
     const messagesRes = await query(
-      'SELECT id, role, content, created_at FROM messages WHERE chat_id = $1 ORDER BY created_at ASC',
+      'SELECT id, role, content, image_url, created_at FROM messages WHERE chat_id = $1 ORDER BY created_at ASC',
       [id]
     );
 
