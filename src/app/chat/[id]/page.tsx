@@ -21,6 +21,7 @@ export default function ChatPage({ params }: PageProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [attachedImage, setAttachedImage] = useState<string | null>(null);
+  const [activeImageModal, setActiveImageModal] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [initializing, setInitializing] = useState(true);
@@ -86,6 +87,17 @@ export default function ChatPage({ params }: PageProps) {
     }
     init();
   }, [chatId, router]);
+
+  // Close modal on Escape key press
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && activeImageModal) {
+        setActiveImageModal(null);
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, [activeImageModal]);
 
   // Auto scroll to the last user question during active conversation
   useEffect(() => {
@@ -242,7 +254,13 @@ export default function ChatPage({ params }: PageProps) {
                   </div>
                   {m.image_url && (
                     <div className="message-image-container">
-                      <img src={m.image_url} alt="Attached strategic context" className="message-image" />
+                      <img
+                        src={m.image_url}
+                        alt="Attached strategic context"
+                        className="message-image"
+                        onClick={() => setActiveImageModal(m.image_url!)}
+                        title="Click to view full image"
+                      />
                     </div>
                   )}
                   {m.content && <div className="message-content">{renderMarkdown(m.content)}</div>}
@@ -269,7 +287,13 @@ export default function ChatPage({ params }: PageProps) {
             {attachedImage && (
               <div className="image-preview-bar">
                 <div className="image-preview-wrapper">
-                  <img src={attachedImage} alt="Attached preview" className="image-preview-thumb" />
+                  <img
+                    src={attachedImage}
+                    alt="Attached preview"
+                    className="image-preview-thumb"
+                    onClick={() => setActiveImageModal(attachedImage)}
+                    title="Click to view full image"
+                  />
                   <button
                     type="button"
                     onClick={() => setAttachedImage(null)}
@@ -332,6 +356,22 @@ export default function ChatPage({ params }: PageProps) {
           </form>
         </main>
       </div>
+
+      {activeImageModal && (
+        <div className="image-modal-overlay" onClick={() => setActiveImageModal(null)}>
+          <div className="image-modal-content" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              className="image-modal-close-btn"
+              onClick={() => setActiveImageModal(null)}
+              title="Close preview"
+            >
+              ✕
+            </button>
+            <img src={activeImageModal} alt="Expanded preview" className="image-modal-img" />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
