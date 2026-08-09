@@ -1,0 +1,15 @@
+name: Supabase Keep-Alive
+
+on:
+  schedule:
+    # Runs automatically every 3 days at 00:00 UTC
+    - cron: '0 0 */3 * *'
+  workflow_dispatch: # Allows you to manually trigger it anytime for testing
+
+jobs:
+  ping-supabase:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase Gateway
+        run: |
+          curl -s -i https://xzntjcttcijvpdytoopk.supabase.co/auth/v1/health
